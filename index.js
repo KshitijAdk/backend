@@ -13,7 +13,9 @@ dotenv.config();
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'https://farmkit.vercel.app'
+}));
 app.use('/api', router);
 app.use(loginRouter)
 app.use('/api', productRouter)

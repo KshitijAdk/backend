@@ -1,26 +1,26 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import router from './routes/admin.js';
 import loginRouter from './routes/login.js';
 import productRouter from './routes/products.js';
 import cartRouter from './routes/cart-routes.js';
-import pool from './controller/db.js';
 import orderRouter from './routes/order-routes.js';
-import dotenv from 'dotenv';
-dotenv.config();
-
+import pool from './controller/db.js';
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(cors({
-  origin: 'https://farmkit.vercel.app'
-}));
+
+app.use(cors());
+
+// Route middlewares
 app.use('/api', router);
-app.use(loginRouter)
-app.use('/api', productRouter)
-app.use(cartRouter)
-app.use(orderRouter)
+app.use(loginRouter);
+app.use('/api', productRouter);
+app.use(cartRouter);
+app.use(orderRouter);
 
 
 // API endpoint to save cart data
@@ -46,7 +46,7 @@ app.post('/api/cart', (req, res) => {
 });
 
 
-app.post('/api/user/cart', async (req, res) => {
+app.post('/api/user/cart', (req, res) => {
   try {
     const { email, cartItems } = req.body;
 
@@ -61,7 +61,7 @@ app.post('/api/user/cart', async (req, res) => {
   }
 });
 
-app.delete('/delete_from_cart', async (req, res) => {
+app.delete('/delete_from_cart', (req, res) => {
   const { email, product_id } = req.query; // Adjusted to use product_id
 
   console.log('Received productId:', product_id); // Changed to product_id
@@ -75,7 +75,7 @@ app.delete('/delete_from_cart', async (req, res) => {
       WHERE email = '${email}';
     `;
 
-    await pool.query(deleteQuery);
+    pool.query(deleteQuery);
 
     res.json({ message: `Item with productId ${product_id} deleted successfully from user with email ${email}` });
   } catch (error) {
@@ -85,23 +85,26 @@ app.delete('/delete_from_cart', async (req, res) => {
 });
 
 
-app.post('/save_cart_items', async (req, res) => {
+// Save cart items endpoint
+app.post('/save_cart_items', (req, res) => {
   const { email, username, cartItems, totalAmount } = req.body;
 
-  try {
-    // Construct the cart items data in JSON format
-    const cartItemsData = JSON.stringify(cartItems);
+  // Validate incoming data
+  if (!email || !username || !Array.isArray(cartItems) || typeof totalAmount !== 'number') {
+    return res.status(400).json({ error: 'Invalid input data' });
+  }
 
-    // Get the current date and time
+  try {
+    const cartItemsData = JSON.stringify(cartItems);
     const createdAt = new Date().toISOString();
 
-    // Insert cart items data into the cart_items table
     const insertQuery = `
       INSERT INTO cart_items (email, username, products, total_amount, created_at)
       VALUES (?, ?, ?, ?, ?);
     `;
 
-    await pool.query(insertQuery, [email, username, cartItemsData, totalAmount, createdAt]);
+    console.log('Executing query:', insertQuery, [email, username, cartItemsData, totalAmount, createdAt]);
+    pool.query(insertQuery, [email, username, cartItemsData, totalAmount, createdAt]);
 
     res.json({ message: 'Cart items saved successfully' });
   } catch (error) {
@@ -110,19 +113,24 @@ app.post('/save_cart_items', async (req, res) => {
   }
 });
 
-// Assuming you're using Express framework
-app.post('/clear_cart_items', async (req, res) => {
+// Clear cart items endpoint
+app.post('/clear_cart_items', (req, res) => {
   const { email } = req.body;
 
+  // Validate incoming data
+  if (!email) {
+    return res.status(400).json({ error: 'Invalid input data' });
+  }
+
   try {
-    // Query to update the cartItems column to an empty array or object
     const updateQuery = `
       UPDATE users
       SET cartItems = '[]'
       WHERE email = ?;
     `;
 
-    await pool.query(updateQuery, [email]);
+    console.log('Executing query:', updateQuery, [email]);
+    pool.query(updateQuery, [email]);
 
     res.json({ message: 'Cart items cleared successfully' });
   } catch (error) {

@@ -1,6 +1,5 @@
 import mysql from "mysql";
 
-
 const pool = mysql.createPool({
     connectionLimit: 10,
     host:'bfomuy9ncjqw2wv29btr-mysql.services.clever-cloud.com',

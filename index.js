@@ -16,10 +16,10 @@ app.use(cors());
 
 // Route middlewares
 app.use('/api', router);
-app.use('/api', loginRouter);
+app.use(loginRouter);
 app.use('/api', productRouter);
-app.use('/api', cartRouter);
-app.use('/api', orderRouter);
+app.use(cartRouter);
+app.use(orderRouter);
 
 // API endpoint to save cart data
 app.post('/api/cart', (req, res) => {
